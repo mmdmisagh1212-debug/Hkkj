@@ -1,1 +1,259 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WireGuard4582</title>
 
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;padding:18px;
+ background:linear-gradient(145deg,#080d20,#15113b,#073744);
+ color:#fff;font-family:Tahoma,Arial,sans-serif;
+ min-height:100vh
+}
+.container{max-width:650px;margin:auto}
+.header{
+ text-align:center;padding:25px 10px;
+ border:1px solid #6556bd;border-radius:22px;
+ background:linear-gradient(135deg,#211849,#102e46);
+ box-shadow:0 0 25px #7665ff22;margin-bottom:20px
+}
+.logo{
+ display:inline-grid;place-items:center;
+ width:65px;height:65px;border-radius:20px;
+ background:linear-gradient(135deg,#a78bfa,#40e9dc);
+ color:#10112a;font-size:23px;font-weight:bold
+}
+h1{font-size:23px;margin:15px 0 8px}
+p{color:#b9c9e9;font-size:12px;line-height:2}
+.card{
+ background:#111a30;border:1px solid #303c65;
+ padding:20px;border-radius:20px;margin-bottom:18px
+}
+h2{font-size:16px;margin:0 0 20px;color:#bbaaff}
+label{display:block;font-size:12px;margin:15px 0 9px;color:#cbd7f5}
+input,select,textarea{
+ width:100%;padding:13px;border-radius:12px;
+ border:1px solid #39496e;background:#091326;
+ color:white;font:inherit;font-size:13px;outline:none
+}
+input:focus,textarea:focus{border-color:#52e5df}
+input[type=file]{font-size:11px}
+textarea{direction:ltr;text-align:left;min-height:180px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.check{
+ display:flex;align-items:center;gap:10px;
+ padding:13px;background:#091326;
+ border:1px solid #39496e;border-radius:12px;
+ margin-top:12px;font-size:12px
+}
+.check input{width:auto;accent-color:#a78bfa}
+button{
+ width:100%;padding:14px;border:0;border-radius:12px;
+ margin-top:12px;font:inherit;font-weight:bold;
+ cursor:pointer
+}
+.main{
+ color:#091326;
+ background:linear-gradient(100deg,#a78bfa,#42e9dc)
+}
+.secondary{background:#202c4b;color:#fff;border:1px solid #465985}
+.status{
+ padding:13px;background:#091326;border-radius:12px;
+ margin-top:14px;font-size:12px;line-height:2;
+ color:#65e8ce;overflow-wrap:anywhere
+}
+.note{font-size:11px;color:#9baccd;line-height:2}
+.footer{text-align:center;font-size:11px;color:#8596b9;padding:15px}
+@media(max-width:430px){.row{grid-template-columns:1fr}body{padding:12px}}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<header class="header">
+ <div class="logo">WG</div>
+ <h1>WireGuard4582</h1>
+ <p>پنل‌ساز اختصاصی وایرگارد</p>
+</header>
+
+<section class="card">
+ <h2>⚙️ تنظیمات پنل</h2>
+
+ <label for="name">نام کانفیگ</label>
+ <input id="name" placeholder="نام دلخواه را وارد کن">
+
+ <div class="row">
+  <div>
+   <label for="volume">حجم (گیگابایت)</label>
+   <input id="volume" type="number" min="1" value="4">
+  </div>
+  <div>
+   <label for="days">اعتبار (روز)</label>
+   <input id="days" type="number" min="1" value="30">
+  </div>
+ </div>
+
+ <label for="users">تعداد کاربر</label>
+ <input id="users" type="number" min="1" value="1">
+
+ <div class="check">
+  <input id="unlimited" type="checkbox">
+  <label for="unlimited" style="margin:0">حجم نامحدود</label>
+ </div>
+
+ <label for="file">انتخاب فایل کانفیگ واقعی</label>
+ <input id="file" type="file" accept=".conf,.txt">
+
+ <button class="main" onclick="buildPanel()">ساخت پنل</button>
+ <button class="secondary" onclick="resetPanel()">پاک کردن اطلاعات</button>
+
+ <div class="status" id="status">آماده ساخت پنل</div>
+</section>
+
+<section class="card">
+ <h2>📥 خروجی پنل</h2>
+
+ <label for="output">متن فایل خروجی</label>
+ <textarea id="output" placeholder="خروجی اینجا نمایش داده می‌شود"></textarea>
+
+ <button class="main" onclick="downloadConfig()">دانلود فایل کانفیگ</button>
+ <button class="secondary" onclick="copyConfig()">کپی متن</button>
+
+ <p class="note">
+ توجه: این پنل فایل را در مرورگر می‌سازد و دانلود می‌کند.
+ حجم و اعتبار واردشده به‌تنهایی توسط WireGuard اعمال نمی‌شوند.
+ برای اتصال واقعی، کانفیگ معتبر لازم است.
+ </p>
+</section>
+
+<div class="footer">WireGuard4582 · پنل‌ساز گیمینگ</div>
+</div>
+
+<script>
+let realConfig = "";
+
+const el = id => document.getElementById(id);
+
+el("file").addEventListener("change", async function(){
+ const file = this.files[0];
+ if(!file){realConfig="";return;}
+
+ try{
+  realConfig = await file.text();
+  el("status").textContent = "فایل کانفیگ با موفقیت خوانده شد.";
+ }catch(e){
+  realConfig="";
+  el("status").textContent = "خواندن فایل ناموفق بود.";
+ }
+});
+
+el("unlimited").addEventListener("change",function(){
+ el("volume").disabled=this.checked;
+ if(this.checked) el("volume").value="";
+ else if(!el("volume").value) el("volume").value="4";
+});
+
+function buildPanel(){
+ const name=el("name").value.trim() || "WireGuard4582";
+ const unlimited=el("unlimited").checked;
+ const volume=el("volume").value;
+ const days=Number(el("days").value);
+ const users=Number(el("users").value);
+
+ if(!unlimited && (!Number.isFinite(Number(volume)) || Number(volume)<1)){
+  el("status").textContent="حجم باید حداقل ۱ گیگابایت باشد.";
+  return;
+ }
+
+ if(!Number.isFinite(days)||days<1){
+  el("status").textContent="اعتبار باید حداقل یک روز باشد.";
+  return;
+ }
+
+ if(!Number.isFinite(users)||users<1){
+  el("status").textContent="تعداد کاربر معتبر نیست.";
+  return;
+ }
+
+ let output="";
+
+ if(realConfig.trim()){
+  output=realConfig.trim()+"\n\n";
+  output+="# مشخصات نمایشی پنل\n";
+ }else{
+  output="# فایل نمونه WireGuard4582\n";
+  output+="# این فایل به‌تنهایی اتصال VPN ایجاد نمی‌کند.\n";
+ }
+
+ output+="# PanelName: "+name.replace(/[\r\n]/g," ")+"\n";
+ output+="# VolumeGB: "+(unlimited?"Unlimited":volume)+"\n";
+ output+="# ValidityDays: "+days+"\n";
+ output+="# Users: "+users+"\n";
+
+ el("output").value=output;
+ el("status").textContent=realConfig.trim()
+ ? "فایل آماده دانلود است؛ محدودیت حجم و اعتبار باید در سرور اعمال شود."
+ : "فایل نمونه ساخته شد. برای اتصال واقعی، کانفیگ معتبر وارد کن.";
+}
+
+function downloadConfig(){
+ const text=el("output").value;
+
+ if(!text.trim()){
+  el("status").textContent="ابتدا روی ساخت پنل بزن.";
+  return;
+ }
+
+ const name=(el("name").value.trim()||"WireGuard4582")
+ .replace(/[^\w.-]+/g,"_");
+
+ const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+
+ a.href=url;
+ a.download=name+".conf";
+ document.body.appendChild(a);
+ a.click();
+ a.remove();
+
+ setTimeout(()=>URL.revokeObjectURL(url),2000);
+ el("status").textContent="درخواست دانلود انجام شد؛ پوشه دانلودهای گوشی را بررسی کن.";
+}
+
+async function copyConfig(){
+ const text=el("output").value;
+ if(!text.trim()){
+  el("status").textContent="اول پنل را بساز.";
+  return;
+ }
+
+ try{
+  await navigator.clipboard.writeText(text);
+  el("status").textContent="متن کپی شد.";
+ }catch(e){
+  el("output").focus();
+  el("output").select();
+  el("status").textContent="متن انتخاب شد؛ آن را کپی کن.";
+ }
+}
+
+function resetPanel(){
+ el("name").value="";
+ el("volume").value="4";
+ el("days").value="30";
+ el("users").value="1";
+ el("unlimited").checked=false;
+ el("volume").disabled=false;
+ el("file").value="";
+ el("output").value="";
+ realConfig="";
+ el("status").textContent="فرم پاک شد؛ آماده ساخت پنل.";
+}
+</script>
+</body>
+  </html>
